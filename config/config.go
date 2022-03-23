@@ -1,40 +1,66 @@
 package config
 
 import (
+	"bytes"
 	_ "embed"
+	"errors"
 	"github.com/BurntSushi/toml"
+	"log"
 	"os"
 	"path/filepath"
 )
 
-const ConfigFile = "csgo-mute/config.toml"
-const DefaultToken = "VALVEPLSSPAREMYEARS"
+const (
+	ConfigFile      = "csgo-mute/config.toml"
+	DefaultToken    = "VALVEPLSSPAREMYEARS"
+	DefaultCsgoNode = "csgo_linux64"
+
+	AppKey    = "app"
+	GsiKey    = "gsi"
+	VolumeKey = "volume"
+
+	CsgoNodeKey = "csgoNodeName"
+	PortKey     = "port"
+	TokenKey    = "token"
+	FlashKey    = "flash"
+	DeathKey    = "death"
+	BombKey     = "bomb"
+	DefaultKey  = "default"
+)
 
 type Config struct {
-	Gsi    gsi
-	Volume volume
+	App    *app    `toml:"app"`
+	Gsi    *gsi    `toml:"gsi"`
+	Volume *volume `toml:"volume"`
+}
+
+type app struct {
+	CsgoNodeName string `toml:"csgoNodeName"`
 }
 
 type gsi struct {
-	Port  int
-	Token string
+	Port  int    `toml:"port"`
+	Token string `toml:"token"`
 }
 
 type volume struct {
-	Flash   float32
-	Death   float32
-	Bomb    float32
-	Default float32
+	Flash   float32 `toml:"flash"`
+	Death   float32 `toml:"death"`
+	Bomb    float32 `toml:"bomb"`
+	Default float32 `toml:"default"`
 }
 
 func New() *Config {
 	// default Config
-	c := Config{
-		Gsi: gsi{
+	c := &Config{
+		App: &app{
+			CsgoNodeName: DefaultCsgoNode,
+		},
+		Gsi: &gsi{
 			Port:  3202,
 			Token: DefaultToken,
 		},
-		Volume: volume{
+		Volume: &volume{
 			Flash:   0.2,
 			Death:   0.2,
 			Bomb:    0.2,
@@ -42,20 +68,78 @@ func New() *Config {
 		},
 	}
 
-	return &c
+	if err := loadConfigFile(c); err != nil {
+		log.Fatal(err)
+	}
+
+	return c
 }
 
-func loadConfigFile() (*Config, error) {
+func (c Config) WriteFile() error {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	configPath := filepath.Join(configDir, ConfigFile)
 
-	c := Config{}
-	if _, err := toml.DecodeFile(configPath, &c); err != nil {
-		return nil, err
+	if err = os.MkdirAll(filepath.Dir(configPath), 0744); err != nil {
+		return err
 	}
 
-	return &c, nil
+	buf := new(bytes.Buffer)
+	if err = toml.NewEncoder(buf).Encode(c); err != nil {
+		return err
+	}
+
+	if err = os.WriteFile(configPath, buf.Bytes(), 0644); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func loadConfigFile(defaultConfig *Config) error {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return err
+	}
+	configPath := filepath.Join(configDir, ConfigFile)
+
+	_, err = os.Stat(configPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	newConfig := Config{}
+	var md toml.MetaData
+	if md, err = toml.DecodeFile(configPath, &newConfig); err != nil {
+		return err
+	}
+
+	// overwrite defaults with configured values
+	if md.IsDefined(AppKey, CsgoNodeKey) {
+		defaultConfig.App.CsgoNodeName = newConfig.App.CsgoNodeName
+	}
+	if md.IsDefined(GsiKey, PortKey) {
+		defaultConfig.Gsi.Port = newConfig.Gsi.Port
+	}
+	if md.IsDefined(GsiKey, TokenKey) {
+		defaultConfig.Gsi.Token = newConfig.Gsi.Token
+	}
+	if md.IsDefined(VolumeKey, FlashKey) {
+		defaultConfig.Volume.Flash = newConfig.Volume.Flash
+	}
+	if md.IsDefined(VolumeKey, DeathKey) {
+		defaultConfig.Volume.Death = newConfig.Volume.Death
+	}
+	if md.IsDefined(VolumeKey, BombKey) {
+		defaultConfig.Volume.Bomb = newConfig.Volume.Bomb
+	}
+	if md.IsDefined(VolumeKey, DefaultKey) {
+		defaultConfig.Volume.Default = newConfig.Volume.Default
+	}
+
+	return nil
 }

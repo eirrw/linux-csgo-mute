@@ -7,10 +7,12 @@ and written specifically for Linux and Pipewire.
 Copy `dist/gamestate_integration_CsgoMute.cfg` to the CSGO config directory, by default 
 `$HOME/.steam/steam/steamapps/common/Counter-Strike Global Offensive/csgo/cfg`.
 
-Run `./linux-csgo-mute`. Default sound levels can be seen in `config/config.go`. Copy `dist/config.toml` to `${USER_CACHE_DIR}/csgo-mute/config.toml`
-to set your own levels/options; leave absent for defaults.
+Run `./linux-csgo-mute`. Default sound levels can be seen with the `-t` flag. Use the `-C` flag to write the config to 
+`${USER_CONFIG_DIR}/csgo-mute/config.toml`; edit the values to set your own levels/options; leave absent for defaults.
+
+The `-h` flag will print all available options.
 
 ### Building
 Requires Go >= 1.18.
 
-Utilizes wrappers around pipewire cli tools for volume management so those need to be available.
+Utilizes wrappers around pipewire cli tools (`pw-dump` and `pw-cli`) for volume management so those need to be available.

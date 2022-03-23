@@ -3,15 +3,12 @@ package config
 import (
 	_ "embed"
 	"github.com/BurntSushi/toml"
-	"log"
 	"os"
 	"path/filepath"
 )
 
-const ConfigFile = "csgo-mute/Config.toml"
-
-//go:embed config.toml
-var defaultConfig []byte
+const ConfigFile = "csgo-mute/config.toml"
+const DefaultToken = "VALVEPLSSPAREMYEARS"
 
 type Config struct {
 	Gsi    gsi
@@ -32,9 +29,17 @@ type volume struct {
 
 func New() *Config {
 	// default Config
-	c := Config{}
-	if _, err := toml.Decode(string(defaultConfig), &c); err != nil {
-		log.Fatal(err)
+	c := Config{
+		Gsi: gsi{
+			Port:  3202,
+			Token: DefaultToken,
+		},
+		Volume: volume{
+			Flash:   0.2,
+			Death:   0.2,
+			Bomb:    0.2,
+			Default: 1.0,
+		},
 	}
 
 	return &c

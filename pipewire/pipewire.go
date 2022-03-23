@@ -6,29 +6,34 @@ import (
 	"os/exec"
 )
 
-var (
-	pwcli      = "pw-cli"
-	pwdump     = "pw-dump"
-	pw_arg_set = "s"
-	pw_arg_ls  = "ls"
+const (
+	PwDumpCmd     = "pw-dump"
+	PwCliCmd      = "pw-cli"
+	PwCliSetOpt   = "s"
+	PwCliPropsOpt = "Props"
+	PwCliVolProp  = "{ volume: %f }"
 )
 
-func loadPipewire() {
-	cmd := exec.Command(pwdump)
-	stdout, err := cmd.StdoutPipe()
+type Pipewire struct {
+	Nodes []Node
+}
+
+func New() *Pipewire {
+	var pipewire Pipewire
+	pipewire.loadPipewire()
+
+	return &pipewire
+}
+
+func (pw *Pipewire) loadPipewire() {
+	out, err := exec.Command(PwDumpCmd).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
-	}
 
+	pw.Nodes = make([]Node, 10)
 	// pw-dump struct
-	var pipewire Node
-	if err := json.NewDecoder(stdout).Decode(&pipewire); err != nil {
-		log.Fatal(err)
-	}
-	if err := cmd.Wait(); err != nil {
+	if err := json.Unmarshal(out, &pw.Nodes); err != nil {
 		log.Fatal(err)
 	}
 }

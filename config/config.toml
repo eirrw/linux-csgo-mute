@@ -1,0 +1,9 @@
+[gsi]
+port = 3202
+token = "VALVEPLSSPAREMYEARS"
+
+[volume]
+flash = 0.2
+death = 0.2
+bomb = 0.2
+default = 1

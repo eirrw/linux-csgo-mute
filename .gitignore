@@ -105,4 +105,4 @@ tags
 # Persistent undo
 [._]*.un~
 
-./linux-csgo-mute
+linux-csgo-mute

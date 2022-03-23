@@ -14,6 +14,7 @@ import (
 func main() {
 	testPtr := flag.Bool("t", false, "Print the current config and exit")
 	writePtr := flag.Bool("C", false, "Write the current config to disk and exit, creating or overwriting the config file as needed")
+	debugFlag := flag.Bool("d", false, "Print debug info")
 
 	flag.Parse()
 
@@ -46,7 +47,7 @@ func main() {
 	}
 
 	// run app
-	err := app.Start()
+	err := app.Start(*debugFlag)
 	if err != nil {
 		log.Fatal(err)
 	}

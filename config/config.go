@@ -76,6 +76,15 @@ func New() *Config {
 	return c
 }
 
+func (c Config) GetConfig() ([]byte, error) {
+	buf := new(bytes.Buffer)
+	if err := toml.NewEncoder(buf).Encode(c); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
 func (c Config) WriteFile() error {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -87,12 +96,12 @@ func (c Config) WriteFile() error {
 		return err
 	}
 
-	buf := new(bytes.Buffer)
-	if err = toml.NewEncoder(buf).Encode(c); err != nil {
+	var str []byte
+	if str, err = c.GetConfig(); err != nil {
 		return err
 	}
 
-	if err = os.WriteFile(configPath, buf.Bytes(), 0644); err != nil {
+	if err = os.WriteFile(configPath, str, 0644); err != nil {
 		return err
 	}
 

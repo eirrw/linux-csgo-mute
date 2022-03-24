@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
-	"github.com/BurntSushi/toml"
 	"log"
 	"os"
 	"virunus.com/linux-csgo-mute/app"
@@ -27,12 +25,12 @@ func main() {
 	if *testPtr {
 		c := config.New()
 
-		buf := new(bytes.Buffer)
-		if err := toml.NewEncoder(buf).Encode(c); err != nil {
+		str, err := c.GetConfig()
+		if err != nil {
 			log.Fatal(err)
 		}
 
-		fmt.Println(buf.String())
+		fmt.Println(string(str))
 
 		os.Exit(0)
 	}

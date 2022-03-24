@@ -47,7 +47,7 @@ type gsi struct {
 }
 
 func New() *Config {
-	// default Config
+	// default config
 	c := &Config{
 		App: &app{
 			CsgoNodeName: DefaultCsgoNode,

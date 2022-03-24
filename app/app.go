@@ -59,7 +59,10 @@ func Start(debug bool) error {
 					}
 				}
 
-				handleState(state, &context)
+				err := handleState(state, &context)
+				if err != nil {
+					log.Println(err)
+				}
 			case <-time.After(time.Minute):
 				if context.Debug {
 					log.Println("timeout")
@@ -76,23 +79,24 @@ func Start(debug bool) error {
 	return nil
 }
 
-func handleState(state csgsi.State, ctx *Context) {
+func handleState(state csgsi.State, ctx *Context) error {
+	var err error
 	if state.Player != nil && state.Round != nil {
 		if state.Player.State.Flashed != ctx.State.Flashed {
 			ctx.State.Flashed = state.Player.State.Flashed
-			if ctx.State.Flashed > 0 {
+			if ctx.State.Flashed > 200 {
 				if ctx.Debug {
-					log.Println("flashed")
+					log.Printf("flashed: %d\n", ctx.State.Flashed)
 				}
-				ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Flash)
-			} else if ctx.State.Flashed < 200 {
+				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Flash)
+			} else {
 				if ctx.Debug {
 					log.Println("not flashed")
 				}
 				if ctx.State.Alive {
-					ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Default)
+					err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Default)
 				} else {
-					ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Death)
+					err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Death)
 				}
 			}
 		}
@@ -105,13 +109,13 @@ func handleState(state csgsi.State, ctx *Context) {
 					log.Println("dead")
 				}
 				ctx.State.Alive = false
-				ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Death)
+				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Death)
 			} else if ctx.State.Health >= 100 {
 				if ctx.Debug {
 					log.Println("alive")
 				}
 				ctx.State.Alive = true
-				ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Default)
+				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Default)
 			}
 		}
 
@@ -121,7 +125,7 @@ func handleState(state csgsi.State, ctx *Context) {
 				if ctx.Debug {
 					log.Println("exploded")
 				}
-				ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Bomb)
+				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Bomb)
 			}
 		}
 
@@ -129,10 +133,12 @@ func handleState(state csgsi.State, ctx *Context) {
 			ctx.State.Phase = state.Round.Phase
 			if ctx.State.Phase == "freezetime" {
 				if ctx.Debug {
-					fmt.Println("freezetime")
+					log.Println("freezetime")
 				}
-				ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Default)
+				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Default)
 			}
 		}
 	}
+
+	return err
 }

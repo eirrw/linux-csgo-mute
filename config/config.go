@@ -151,3 +151,11 @@ func loadConfigFile(defaultConfig *Config) error {
 
 	return nil
 }
+
+func validateConfig(config *Config) error {
+	if config.Gsi.FlashEnd < 0 || config.Gsi.FlashEnd > 255 {
+		return errors.New("invalid value for 'flashEnd'. must be in range 0-255")
+	}
+
+	return nil
+}

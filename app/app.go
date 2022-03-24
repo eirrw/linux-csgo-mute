@@ -88,15 +88,15 @@ func handleState(state csgsi.State, ctx *Context) error {
 				if ctx.Debug {
 					log.Printf("flashed: %d\n", ctx.State.Flashed)
 				}
-				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Flash)
+				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume[config.FlashKey])
 			} else {
 				if ctx.Debug {
 					log.Println("not flashed")
 				}
 				if ctx.State.Alive {
-					err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Default)
+					err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume[config.DefaultKey])
 				} else {
-					err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Death)
+					err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume[config.DeathKey])
 				}
 			}
 		}
@@ -109,13 +109,13 @@ func handleState(state csgsi.State, ctx *Context) error {
 					log.Println("dead")
 				}
 				ctx.State.Alive = false
-				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Death)
+				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume[config.DeathKey])
 			} else if ctx.State.Health >= 100 {
 				if ctx.Debug {
 					log.Println("alive")
 				}
 				ctx.State.Alive = true
-				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Default)
+				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume[config.DefaultKey])
 			}
 		}
 
@@ -125,7 +125,7 @@ func handleState(state csgsi.State, ctx *Context) error {
 				if ctx.Debug {
 					log.Println("exploded")
 				}
-				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Bomb)
+				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume[config.BombKey])
 			}
 		}
 
@@ -135,7 +135,7 @@ func handleState(state csgsi.State, ctx *Context) error {
 				if ctx.Debug {
 					log.Println("freezetime")
 				}
-				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume.Default)
+				err = ctx.Pw.SetVolume(ctx.State.NodeId, ctx.Config.Volume[config.DefaultKey])
 			}
 		}
 	}

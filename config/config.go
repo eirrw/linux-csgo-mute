@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"errors"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"log"
 	"os"
@@ -30,9 +31,9 @@ const (
 )
 
 type Config struct {
-	App    *app    `toml:"app"`
-	Gsi    *gsi    `toml:"gsi"`
-	Volume *volume `toml:"volume"`
+	App    *app               `toml:"app"`
+	Gsi    *gsi               `toml:"gsi"`
+	Volume map[string]float32 `toml:"volume"`
 }
 
 type app struct {
@@ -43,13 +44,6 @@ type gsi struct {
 	Port     int    `toml:"port"`
 	Token    string `toml:"token"`
 	FlashEnd int    `toml:"flashEnd"`
-}
-
-type volume struct {
-	Flash   float32 `toml:"flash"`
-	Death   float32 `toml:"death"`
-	Bomb    float32 `toml:"bomb"`
-	Default float32 `toml:"default"`
 }
 
 func New() *Config {
@@ -63,15 +57,19 @@ func New() *Config {
 			Token:    DefaultToken,
 			FlashEnd: 200,
 		},
-		Volume: &volume{
-			Flash:   0.2,
-			Death:   0.2,
-			Bomb:    0.2,
-			Default: 1.0,
+		Volume: map[string]float32{
+			FlashKey:   0.2,
+			DeathKey:   0.2,
+			BombKey:    0.2,
+			DefaultKey: 1.0,
 		},
 	}
 
 	if err := loadConfigFile(c); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := validateConfig(c); err != nil {
 		log.Fatal(err)
 	}
 
@@ -122,10 +120,12 @@ func loadConfigFile(defaultConfig *Config) error {
 	}
 
 	// overwrite defaults with configured values
+	// app
 	if md.IsDefined(AppKey, CsgoNodeKey) {
 		defaultConfig.App.CsgoNodeName = newConfig.App.CsgoNodeName
 	}
 
+	// gsi
 	if md.IsDefined(GsiKey, PortKey) {
 		defaultConfig.Gsi.Port = newConfig.Gsi.Port
 	}
@@ -136,17 +136,9 @@ func loadConfigFile(defaultConfig *Config) error {
 		defaultConfig.Gsi.FlashEnd = newConfig.Gsi.FlashEnd
 	}
 
-	if md.IsDefined(VolumeKey, FlashKey) {
-		defaultConfig.Volume.Flash = newConfig.Volume.Flash
-	}
-	if md.IsDefined(VolumeKey, DeathKey) {
-		defaultConfig.Volume.Death = newConfig.Volume.Death
-	}
-	if md.IsDefined(VolumeKey, BombKey) {
-		defaultConfig.Volume.Bomb = newConfig.Volume.Bomb
-	}
-	if md.IsDefined(VolumeKey, DefaultKey) {
-		defaultConfig.Volume.Default = newConfig.Volume.Default
+	// volume
+	for k, v := range newConfig.Volume {
+		defaultConfig.Volume[k] = v
 	}
 
 	return nil
@@ -154,7 +146,13 @@ func loadConfigFile(defaultConfig *Config) error {
 
 func validateConfig(config *Config) error {
 	if config.Gsi.FlashEnd < 0 || config.Gsi.FlashEnd > 255 {
-		return errors.New("invalid value for 'flashEnd'. must be in range 0-255")
+		return errors.New(fmt.Sprintf("invalid value for 'flashEnd': '%d'. must be in range 0 - 255", config.Gsi.FlashEnd))
+	}
+
+	for k, v := range config.Volume {
+		if v < 0 || v > 1 {
+			return errors.New(fmt.Sprintf("invalid value for '%s': '%.1f'. must be in range 0.0 - 1.0", k, v))
+		}
 	}
 
 	return nil

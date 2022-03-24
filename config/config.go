@@ -22,6 +22,7 @@ const (
 	CsgoNodeKey = "csgoNodeName"
 	PortKey     = "port"
 	TokenKey    = "token"
+	FlashEndKey = "flashEnd"
 	FlashKey    = "flash"
 	DeathKey    = "death"
 	BombKey     = "bomb"
@@ -39,8 +40,9 @@ type app struct {
 }
 
 type gsi struct {
-	Port  int    `toml:"port"`
-	Token string `toml:"token"`
+	Port     int    `toml:"port"`
+	Token    string `toml:"token"`
+	FlashEnd int    `toml:"flashEnd"`
 }
 
 type volume struct {
@@ -57,8 +59,9 @@ func New() *Config {
 			CsgoNodeName: DefaultCsgoNode,
 		},
 		Gsi: &gsi{
-			Port:  3202,
-			Token: DefaultToken,
+			Port:     3202,
+			Token:    DefaultToken,
+			FlashEnd: 200,
 		},
 		Volume: &volume{
 			Flash:   0.2,
@@ -122,12 +125,17 @@ func loadConfigFile(defaultConfig *Config) error {
 	if md.IsDefined(AppKey, CsgoNodeKey) {
 		defaultConfig.App.CsgoNodeName = newConfig.App.CsgoNodeName
 	}
+
 	if md.IsDefined(GsiKey, PortKey) {
 		defaultConfig.Gsi.Port = newConfig.Gsi.Port
 	}
 	if md.IsDefined(GsiKey, TokenKey) {
 		defaultConfig.Gsi.Token = newConfig.Gsi.Token
 	}
+	if md.IsDefined(GsiKey, FlashEndKey) {
+		defaultConfig.Gsi.FlashEnd = newConfig.Gsi.FlashEnd
+	}
+
 	if md.IsDefined(VolumeKey, FlashKey) {
 		defaultConfig.Volume.Flash = newConfig.Volume.Flash
 	}

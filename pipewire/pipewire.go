@@ -42,21 +42,9 @@ type info struct {
 	Props      infoProps `json:"props"`
 }
 
-// infoProps holds a series of useful values for managing properties of a pipewire node
+// infoProps holds property information for the node. Only one field is needed for this use case.
 type infoProps struct {
-	LogLevel                 int    `json:"log.level"`
-	NodeName                 string `json:"node.name"`
-	ApplicationProcessId     int    `json:"application.process.id"`
-	ApplicationProcessUser   string `json:"application.process.user"`
-	ApplicationProcessHost   string `json:"application.process.host"`
-	ApplicationProcessBinary string `json:"application.process.binary"`
-	ApplicationName          string `json:"application.name"`
-	MediaClass               string `json:"media.class"`
-	NodeDescription          string `json:"node.description"`
-	ClientName               string `json:"client.name"`
-	MediaType                string `json:"media.type"`
-	MediaCategory            string `json:"media.category"`
-	MediaRole                string `json:"media.role"`
+	NodeName string `json:"node.name"`
 }
 
 // New creates and loads a new instance of the Pipewire struct.

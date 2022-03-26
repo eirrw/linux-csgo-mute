@@ -16,3 +16,6 @@ The `-h` flag will print all available options.
 Requires Go >= 1.18.
 
 Utilizes wrappers around pipewire cli tools (`pw-dump` and `pw-cli`) for volume management so those need to be available.
+
+System tray support is provided by [getlantern/systray](https://github.com/getlantern/systray), so all CGo dependencies
+of that module are required as well, namely `gcc` and development headers for `gtk3` and `libayatana-appindicator3`.

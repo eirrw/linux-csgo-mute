@@ -1,13 +1,22 @@
 package app
 
 import (
+	_ "embed"
 	"fmt"
 	"github.com/dank/go-csgsi"
+	"github.com/getlantern/systray"
 	"log"
+	"os"
 	"time"
 	"virunus.com/linux-csgo-mute/config"
 	"virunus.com/linux-csgo-mute/pipewire"
 )
+
+//go:embed icon_blue.png
+var iconBlue []byte
+
+//go:embed icon_red.png
+var iconRed []byte
 
 // context manages context and state for the application
 type context struct {
@@ -17,6 +26,7 @@ type context struct {
 	state    *state             // Manages state of the game/player as reported by game
 	debug    bool               // Set if debug messages should be logged
 	nodeId   int                // nodeId to use for CSGO, so we don't have to look it up every time
+	enabled  bool
 }
 
 // state manages the current states of the player/game as reported by the GSI
@@ -31,53 +41,88 @@ type state struct {
 
 // Start loads the config and pipewire components then starts the GSI server
 func Start(debug bool) error {
-	context := context{
-		game:   csgsi.New(0),
-		config: config.New(),
-		state:  &state{},
-		debug:  debug,
+	ctx := context{
+		game:    csgsi.New(0),
+		config:  config.New(),
+		state:   &state{},
+		debug:   debug,
+		enabled: true,
 	}
 
+	// system tray icon
 	go func() {
-		for {
-			select {
-			case state := <-context.game.Channel:
-				if state.Auth == nil || state.Auth.Token != context.config.Gsi.Token {
-					fmt.Println("bad")
-					continue
-				}
+		systray.Run(func() {
+			systray.SetIcon(iconBlue)
+			menuEnabled := systray.AddMenuItem("Disable", "Enable or disable volume adjustment")
+			systray.AddSeparator()
+			menuQuit := systray.AddMenuItem("Quit", "Exit application")
 
-				if !context.state.connected {
-					context.pipewire = pipewire.New()
-					context.nodeId = context.pipewire.GetNodeIdByName(context.config.App.CsgoNodeName)
-					if context.nodeId == -1 {
-						if context.debug {
-							log.Println("Could not find audio node, reloading")
-						}
-						continue
+			for {
+				select {
+				case <-menuQuit.ClickedCh:
+					systray.Quit()
+					os.Exit(0)
+					return
+				case <-menuEnabled.ClickedCh:
+					if !ctx.enabled {
+						ctx.enabled = true
+						systray.SetIcon(iconBlue)
+						menuEnabled.SetTitle("Disable")
 					} else {
-						context.state.connected = true
+						ctx.enabled = false
+						systray.SetIcon(iconRed)
+						menuEnabled.SetTitle("Enable")
 					}
 				}
-
-				err := handleState(state, &context)
-				if err != nil {
-					log.Println(err)
-				}
-			case <-time.After(time.Minute):
-				if context.debug {
-					log.Println("timeout")
-				}
-				context.state.connected = false
 			}
-		}
+		}, nil)
 	}()
 
-	if err := context.game.Listen(fmt.Sprintf(":%d", context.config.Gsi.Port)); err != nil {
+	go processGsiRequest(&ctx)
+
+	if err := ctx.game.Listen(fmt.Sprintf(":%d", ctx.config.Gsi.Port)); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// processGsiRequest will asynchronously handle requests to the GSI server and perform the required actions
+func processGsiRequest(ctx *context) {
+	for {
+		select {
+		case state := <-ctx.game.Channel:
+			if state.Auth == nil || state.Auth.Token != ctx.config.Gsi.Token {
+				fmt.Println("bad")
+				continue
+			}
+
+			if !ctx.state.connected {
+				ctx.pipewire = pipewire.New()
+				ctx.pipewire.GetNodeIdByName(ctx.config.App.CsgoNodeName)
+				if ctx.nodeId == -1 {
+					if ctx.debug {
+						log.Println("Could not find audio node, reloading")
+					}
+					continue
+				} else {
+					ctx.state.connected = true
+				}
+			}
+
+			if ctx.enabled {
+				err := handleState(state, ctx)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		case <-time.After(time.Minute):
+			if ctx.debug {
+				log.Println("timeout")
+			}
+			ctx.state.connected = false
+		}
+	}
 }
 
 // handleState reads the incoming state from the GSI and performs the necessary actions based on the input

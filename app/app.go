@@ -99,7 +99,7 @@ func processGsiRequest(ctx *context) {
 
 			if !ctx.state.connected {
 				ctx.pipewire = pipewire.New()
-				ctx.pipewire.GetNodeIdByName(ctx.config.App.CsgoNodeName)
+				ctx.nodeId = ctx.pipewire.GetNodeIdByName(ctx.config.App.CsgoNodeName)
 				if ctx.nodeId == -1 {
 					if ctx.debug {
 						log.Println("Could not find audio node, reloading")

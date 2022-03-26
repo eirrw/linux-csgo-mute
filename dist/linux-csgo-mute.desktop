@@ -1,0 +1,7 @@
+[Desktop Entry]
+Version=1.5
+Name=linux-csgo-mute
+Comment=Start volume auto-adjust for CSGO
+Exec=/sbin/linux-csgo-mute
+Type=Application
+Categories=Audio;Game;Utility;

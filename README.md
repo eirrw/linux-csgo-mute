@@ -12,6 +12,9 @@ Run `./linux-csgo-mute`. Default sound levels can be seen with the `-t` flag. Us
 
 The `-h` flag will print all available options.
 
+A basic `.desktop` file is included for non-terminal use. Copy to your user desktop file location (usually 
+`~/.local/share/applications/`) and edit the `Exec` keyword to point to the location of the binary on your system.
+
 ### Building
 Requires Go >= 1.18.
 
